@@ -2,6 +2,7 @@ import { AbstractView, DataModel, Path, ModelPath } from "@mcschema/core"
 import { BiomeNoiseVisualizer } from "./BiomeNoiseVisualizer"
 import { NoiseSettingsVisualizer } from "./NoiseSettingsVisualizer"
 import { Visualizer } from "./Visualizer"
+import { addListener, removeListener } from 'resize-detector'
 
 export class VisualizerView extends AbstractView {
   ctx: CanvasRenderingContext2D
@@ -15,6 +16,7 @@ export class VisualizerView extends AbstractView {
   controls: HTMLElement
   lastHeight?: string
   dragStart?: number[]
+  private redrawTimer? : NodeJS.Timeout
 
   constructor(model: DataModel, el: HTMLElement) {
     super(model)
@@ -40,12 +42,31 @@ export class VisualizerView extends AbstractView {
     this.canvas.addEventListener('mouseup', evt => {
       this.dragStart = undefined
     })
-  }
+    this.canvas.addEventListener('resize', () => { 
+      console.log('hi');
+      this.redraw();
+    })
+    addListener(this.canvas, el => {
+      if(el.clientWidth > 0 && el.clientHeight > 0
+          && (el.width != el.clientWidth || el.height != el.clientHeight)) {
 
+        el.width = el.clientWidth;
+        el.height = el.clientWidth;
+        this.redraw();
+      }
+    });
+  }
+  
   redraw() {
     if (this.active && this.visualizer) {
-      this.visualizer.state = {}
-      this.invalidated()
+      if(this.redrawTimer) {
+        clearTimeout(this.redrawTimer);
+      }
+
+      this.redrawTimer = setTimeout(() => {
+        this.visualizer!.state = {};
+        this.invalidated()
+      }, 100);
     }
   }
 
@@ -56,7 +77,8 @@ export class VisualizerView extends AbstractView {
         && this.visualizer.active(this.path)
         && (newState = this.path.get())) {
       if (newState && this.visualizer.dirty(this.path)) {
-        const img = this.ctx.createImageData(200, 100)
+        console.log(`${this.canvas.width}, ${this.canvas.height}`);
+        const img = this.ctx.createImageData(this.canvas.width, this.canvas.height)
         this.visualizer.state = JSON.parse(JSON.stringify(newState))
         this.visualizer.draw(this.model, img)
         this.ctx.putImageData(img, 0, 0)

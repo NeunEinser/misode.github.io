@@ -43,11 +43,11 @@ export class BiomeNoiseVisualizer extends Visualizer {
 
     const data = img.data
     const s = (2 ** this.viewScale)
-    for (let x = 0; x < 200; x += 1) {
-      for (let y = 0; y < 100; y += 1) {
+    for (let x = 0; x < img.width; x += 1) {
+      for (let y = 0; y < img.height; y += 1) {
         const i = (y * (img.width * 4)) + (x * 4)
-        const xx = (x - this.offsetX) * s - 100 * s
-        const yy = (y - this.offsetY) * s - 50 * s
+        const xx = (x - this.offsetX) * s - img.width/2  * s
+        const yy = (y - this.offsetY) * s - img.height/2 * s
         const b = this.closestBiome(xx, yy)
         const color = biomeColorCache[b]
         data[i] = color[0]
